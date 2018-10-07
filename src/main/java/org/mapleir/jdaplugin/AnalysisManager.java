@@ -10,6 +10,8 @@ import org.mapleir.context.BasicAnalysisContext;
 import org.mapleir.context.IRCache;
 import org.mapleir.deob.dataflow.LiveDataFlowAnalysisImpl;
 import org.mapleir.ir.cfg.builder.ControlFlowGraphBuilder;
+import org.mapleir.stdlib.util.JavaDesc;
+import org.mapleir.stdlib.util.JavaDescSpecifier;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 
@@ -111,16 +113,26 @@ public class AnalysisManager {
         return queuedAnalysisItems.get() == 0;
     }
 
-    public List<ViewerFile> search(String needle) {
+    public List<ViewerFile> searchConstant(String needle) {
         List<ViewerFile> matches = new ArrayList<>();
         for (FileContainer fc : JDA.getOpenFiles()) {
             AnalysisContext cxt = cxts.get(fc);
-            if (cxt == null) // incomplete analysis
-                continue;
+            if (cxt == null) continue; // incomplete analysis
             matches.addAll(cxt.getDataflowAnalysis().enumerateConstants()
-                    .filter(Objects::nonNull)
                     .filter(constantExpr -> String.valueOf(constantExpr.getConstant()).contains(needle))
                     .map(constantExpr -> new ViewerFile(fc, constantExpr.getRootParent().getBlock().getGraph().getOwner() + ".class"))
+                    .collect(Collectors.toList()));
+        }
+        return matches;
+    }
+
+    public List<ViewerFile> searchMethod(String methodName) { // ugh... we want tokenization from JDA's part
+        List<ViewerFile> matches = new ArrayList<>();
+        for (FileContainer fc : JDA.getOpenFiles()) {
+            AnalysisContext cxt = cxts.get(fc);
+            if (cxt == null) continue; // incomplete analysis
+            matches.addAll(cxt.getDataflowAnalysis().findAllRefs(new JavaDescSpecifier(".*", methodName, ".*", JavaDesc.DescType.METHOD))
+                    .map(javaDescUse -> new ViewerFile(fc, javaDescUse.flowElement.getDataUseLocation().owner + ".class"))
                     .collect(Collectors.toList()));
         }
         return matches;
