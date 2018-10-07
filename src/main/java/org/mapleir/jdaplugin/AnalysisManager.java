@@ -17,12 +17,17 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import static club.bytecode.the.jda.util.GuiUtils.sleep;
+
 public class AnalysisManager {
     public final Map<FileContainer, AnalysisContext> cxts = new HashMap<>();
+
     private final AtomicInteger queuedAnalysisItems = new AtomicInteger(0);
+    private final Map<FileContainer, Thread> analysisJobs = new HashMap<>();
 
     public void load(FileContainer fileContainer) {
         Thread analysisThread = new Thread(() -> analyzeBinaryThread(fileContainer));
+        analysisJobs.put(fileContainer, analysisThread);
         analysisThread.start();
         System.out.println("[MapleIR] " + fileContainer + " analyzing in background");
     }
@@ -33,11 +38,10 @@ public class AnalysisManager {
         AnalysisContext newCxt = analyzeBinary(fileContainer);
         try {
             cxts.put(fileContainer, newCxt);
-        } catch (Exception e) {
-            throw e;
         } finally {
             JDA.setBusy(false);
             queuedAnalysisItems.decrementAndGet();
+            analysisJobs.remove(fileContainer);
         }
     }
 
@@ -51,6 +55,10 @@ public class AnalysisManager {
             } catch(Exception e) {
                 System.err.println("[MapleIR] Failed to load class " + file + ":");
                 e.printStackTrace();
+            }
+            if (Thread.currentThread().isInterrupted()) {
+                System.out.println("[MapleIR] Analysis interrupted");
+                return null;
             }
         }
         System.out.printf("[MapleIR] Loaded %d classes\n", classes.size());
@@ -74,6 +82,10 @@ public class AnalysisManager {
                     System.err.println("[MapleIR] Failed to build IR for " + m.getJavaDesc() + ":");
                     e.printStackTrace();
                 }
+                if (Thread.currentThread().isInterrupted()) {
+                    System.out.println("[MapleIR] Analysis interrupted");
+                    return null;
+                }
             }
         }
         System.out.printf("[MapleIR] Computed %d cfgs\n", newCxt.getIRCache().size());
@@ -81,7 +93,18 @@ public class AnalysisManager {
     }
 
     public void unload(FileContainer fc) {
+        stopAnalysis(fc);
         cxts.remove(fc);
+    }
+
+    private void stopAnalysis(FileContainer fc) {
+        analysisJobs.get(fc).interrupt();
+        for (int i = 0; i < 100 && analysisJobs.get(fc) != null; i++) {
+            sleep(10L);
+        }
+        if (analysisJobs.get(fc) != null) { // apply violence
+            analysisJobs.get(fc).stop();
+        }
     }
 
     public boolean isAnalysisComplete() {
