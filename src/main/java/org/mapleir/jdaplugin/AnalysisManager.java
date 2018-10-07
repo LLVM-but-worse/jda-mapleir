@@ -14,12 +14,34 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class AnalysisManager {
     public final Map<FileContainer, AnalysisContext> cxts = new HashMap<>();
+    private final AtomicInteger queuedAnalysisItems = new AtomicInteger(0);
 
     public void load(FileContainer fileContainer) {
+        Thread analysisThread = new Thread(() -> analyzeBinaryThread(fileContainer));
+        analysisThread.start();
+        System.out.println("[MapleIR] " + fileContainer + " analyzing in background");
+    }
+
+    private void analyzeBinaryThread(FileContainer fileContainer) {
+        queuedAnalysisItems.incrementAndGet();
+        JDA.setBusy(true);
+        AnalysisContext newCxt = analyzeBinary(fileContainer);
+        try {
+            cxts.put(fileContainer, newCxt);
+        } catch (Exception e) {
+            throw e;
+        } finally {
+            JDA.setBusy(false);
+            queuedAnalysisItems.decrementAndGet();
+        }
+    }
+
+    private AnalysisContext analyzeBinary(FileContainer fileContainer) {
         Set<ClassNode> classes = new HashSet<>();
         for (String file : fileContainer.getFiles().keySet()) {
             if (!file.endsWith(".class"))
@@ -55,19 +77,23 @@ public class AnalysisManager {
             }
         }
         System.out.printf("[MapleIR] Computed %d cfgs\n", newCxt.getIRCache().size());
-
-        // when we get around to it, do tracing, IPA stuff here.
-        cxts.put(fileContainer, newCxt);
+        return newCxt;
     }
 
     public void unload(FileContainer fc) {
         cxts.remove(fc);
     }
 
+    public boolean isAnalysisComplete() {
+        return queuedAnalysisItems.get() == 0;
+    }
+
     public List<ViewerFile> search(String needle) {
         List<ViewerFile> matches = new ArrayList<>();
         for (FileContainer fc : JDA.getOpenFiles()) {
             AnalysisContext cxt = cxts.get(fc);
+            if (cxt == null) // incomplete analysis
+                continue;
             matches.addAll(cxt.getDataflowAnalysis().enumerateConstants()
                     .filter(Objects::nonNull)
                     .filter(constantExpr -> String.valueOf(constantExpr.getConstant()).contains(needle))

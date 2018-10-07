@@ -1,16 +1,10 @@
 package org.mapleir.jdaplugin.gui;
 
-import club.bytecode.the.jda.FileContainer;
-import club.bytecode.the.jda.JDA;
-import club.bytecode.the.jda.api.JDAPlugin;
 import club.bytecode.the.jda.gui.MainViewerGUI;
-import club.bytecode.the.jda.gui.fileviewer.ViewerFile;
 import club.bytecode.the.jda.gui.search.SearchDialog;
 import org.mapleir.jdaplugin.MaplePlugin;
 
 import javax.swing.*;
-import java.util.ArrayList;
-import java.util.List;
 
 public class GuiIntegration {
     private final MainViewerGUI gui;
@@ -30,6 +24,9 @@ public class GuiIntegration {
     }
 
     public void doJavaSearchDialog() {
+        if (!MaplePlugin.getInstance().analysisEngine.isAnalysisComplete()) {
+            JOptionPane.showMessageDialog(gui,"Analysis is't complete yet, results may be inaccurate","Warning", JOptionPane.WARNING_MESSAGE);
+        }
         String constant = JOptionPane.showInputDialog("Enter a constant...");
         if (constant == null || constant.isEmpty()) {
             return;
