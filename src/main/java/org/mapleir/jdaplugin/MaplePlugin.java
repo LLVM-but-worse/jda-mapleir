@@ -1,6 +1,7 @@
 package org.mapleir.jdaplugin;
 
 import club.bytecode.the.jda.FileContainer;
+import club.bytecode.the.jda.JDA;
 import club.bytecode.the.jda.api.JDAPlugin;
 import club.bytecode.the.jda.api.JDAPluginNamespace;
 import club.bytecode.the.jda.decompilers.Decompilers;
@@ -13,6 +14,7 @@ import org.mapleir.context.BasicAnalysisContext;
 import org.mapleir.context.IRCache;
 import org.mapleir.ir.cfg.builder.ControlFlowGraphBuilder;
 import org.mapleir.jdaplugin.gui.AboutDialog;
+import org.mapleir.jdaplugin.gui.GuiIntegration;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.HashMap;
@@ -21,12 +23,15 @@ import java.util.Map;
 
 public class MaplePlugin implements JDAPlugin {
     private static MaplePlugin instance;
+    private static GuiIntegration guiIntegration;
 
-    public final Map<FileContainer, AnalysisContext> cxts = new HashMap<>();
+    public final AnalysisManager analysisEngine;
+
     public final JDAPluginNamespace namespace = new JDAPluginNamespace(this);
 
     public MaplePlugin() {
         instance = this;
+        analysisEngine = new AnalysisManager();
     }
 
     public static void main(String[] args) {
@@ -52,7 +57,7 @@ public class MaplePlugin implements JDAPlugin {
         Decompilers.registerDecompiler(new IRDecompiler());
         Decompilers.registerDecompiler(new ILDecompiler());
         DecompileFilters.registerFilter(new DeobfuscateFilter());
-        System.out.println("MapleIR plugin loaded");
+        System.out.println("MapleIR decompilers registered");
     }
 
     @Override
@@ -62,6 +67,8 @@ public class MaplePlugin implements JDAPlugin {
 
     @Override
     public void onGUILoad() {
+        guiIntegration = new GuiIntegration(JDA.viewer);
+        System.out.println("MapleIR plugin loaded");
     }
 
     @Override
@@ -70,21 +77,12 @@ public class MaplePlugin implements JDAPlugin {
 
     @Override
     public void onOpenFile(FileContainer fileContainer) {
-        // todo
-        ApplicationClassSource app = new ApplicationClassSource(fileContainer.name, new HashSet<>());
-        AnalysisContext newCxt = new BasicAnalysisContext.BasicContextBuilder()
-                .setApplication(app)
-                .setInvocationResolver(new DefaultInvocationResolver(app))
-                .setCache(new IRCache(ControlFlowGraphBuilder::build))
-                .setApplicationContext(new SimpleApplicationContext(app))
-                .build();
-        // when we get around to it, do tracing, IPA stuff here.
-        cxts.put(fileContainer, newCxt);
+        analysisEngine.load(fileContainer);
     }
 
     @Override
     public void onCloseFile(FileContainer fc) {
-        cxts.remove(fc);
+        analysisEngine.unload(fc);
     }
 
     @Override
