@@ -2,8 +2,10 @@ package org.mapleir.jdaplugin;
 
 import club.bytecode.the.jda.decompilers.bytecode.*;
 import org.mapleir.ir.algorithms.BoissinotDestructor;
+import org.mapleir.ir.algorithms.LocalsReallocator;
 import org.mapleir.ir.cfg.ControlFlowGraph;
 import org.mapleir.ir.cfg.builder.ControlFlowGraphBuilder;
+import org.objectweb.asm.commons.JSRInlinerAdapter;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 
@@ -41,9 +43,12 @@ class IRInstructionPrinter extends InstructionPrinter {
 
     @Override
     public ArrayList<String> createPrint() {
-        ControlFlowGraph cfg = ControlFlowGraphBuilder.build(mNode);
+        final JSRInlinerAdapter adapter = new JSRInlinerAdapter(mNode, mNode.access, mNode.name, mNode.desc, mNode.signature, mNode.exceptions.toArray(new String[0]));
+        adapter.owner = mNode.owner;
+        mNode.accept(adapter);
+        ControlFlowGraph cfg = ControlFlowGraphBuilder.build(adapter);
         BoissinotDestructor.leaveSSA(cfg);
-        cfg.getLocals().realloc(cfg);
+        LocalsReallocator.realloc(cfg);
         String result = cfg.toString();
         return new ArrayList<>(Arrays.asList(result.split("\n")));
     }
