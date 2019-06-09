@@ -44,9 +44,8 @@ class IRInstructionPrinter extends InstructionPrinter {
     @Override
     public ArrayList<String> createPrint() {
         final JSRInlinerAdapter adapter = new JSRInlinerAdapter(mNode, mNode.access, mNode.name, mNode.desc, mNode.signature, mNode.exceptions.toArray(new String[0]));
-        adapter.owner = mNode.owner;
         mNode.accept(adapter);
-        ControlFlowGraph cfg = ControlFlowGraphBuilder.build(adapter);
+        ControlFlowGraph cfg = ControlFlowGraphBuilder.build(new org.mapleir.asm.MethodNode(adapter, new org.mapleir.asm.ClassNode()));
         BoissinotDestructor.leaveSSA(cfg);
         LocalsReallocator.realloc(cfg);
         String result = cfg.toString();

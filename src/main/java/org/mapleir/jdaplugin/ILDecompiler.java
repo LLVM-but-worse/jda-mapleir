@@ -28,9 +28,8 @@ public class ILDecompiler extends JDADecompiler implements MapleComponent {
             @Override
             protected ControlFlowGraph getCfg(MethodNode mn) {
                 final JSRInlinerAdapter adapter = new JSRInlinerAdapter(mn, mn.access, mn.name, mn.desc, mn.signature, mn.exceptions.toArray(new String[0]));
-                adapter.owner = mn.owner;
                 mn.accept(adapter);
-                ControlFlowGraph cfg = ControlFlowGraphBuilder.build(adapter);
+                ControlFlowGraph cfg = ControlFlowGraphBuilder.build(new org.mapleir.asm.MethodNode(adapter, new org.mapleir.asm.ClassNode()));
                 BoissinotDestructor.leaveSSA(cfg);
                 LocalsReallocator.realloc(cfg);
                 return cfg;

@@ -5,6 +5,8 @@ import club.bytecode.the.jda.JDA;
 import club.bytecode.the.jda.gui.fileviewer.ViewerFile;
 import org.mapleir.app.client.SimpleApplicationContext;
 import org.mapleir.app.service.ApplicationClassSource;
+import org.mapleir.asm.ClassNode;
+import org.mapleir.asm.MethodNode;
 import org.mapleir.context.AnalysisContext;
 import org.mapleir.context.BasicAnalysisContext;
 import org.mapleir.context.IRCache;
@@ -12,8 +14,6 @@ import org.mapleir.deob.dataflow.LiveDataFlowAnalysisImpl;
 import org.mapleir.ir.cfg.builder.ControlFlowGraphBuilder;
 import org.mapleir.stdlib.util.JavaDesc;
 import org.mapleir.stdlib.util.JavaDescSpecifier;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.MethodNode;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -53,7 +53,7 @@ public class AnalysisManager {
             if (!file.endsWith(".class"))
                 continue;
             try {
-                classes.add(fileContainer.loadClassFile(file));
+                classes.add(new ClassNode(fileContainer.loadClassFile(file)));
             } catch(Exception e) {
                 System.err.println("[MapleIR] Failed to load class " + file + ":");
                 e.printStackTrace();
@@ -77,7 +77,7 @@ public class AnalysisManager {
                 .build();
 
         for (ClassNode cn : newCxt.getApplication().iterate()) {
-            for (MethodNode m : cn.methods) {
+            for (MethodNode m : cn.getMethods()) {
                 try {
                     newCxt.getIRCache().getFor(m);
                 } catch(Exception e) {
@@ -100,6 +100,7 @@ public class AnalysisManager {
     }
 
     private void stopAnalysis(FileContainer fc) {
+        if (analysisJobs.get(fc) == null) return;
         analysisJobs.get(fc).interrupt();
         for (int i = 0; i < 100 && analysisJobs.get(fc) != null; i++) {
             sleep(10L);
