@@ -14,6 +14,7 @@ import org.mapleir.deob.dataflow.LiveDataFlowAnalysisImpl;
 import org.mapleir.ir.cfg.builder.ControlFlowGraphBuilder;
 import org.mapleir.stdlib.util.JavaDesc;
 import org.mapleir.stdlib.util.JavaDescSpecifier;
+import org.objectweb.asm.commons.JSRInlinerAdapter;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -79,7 +80,9 @@ public class AnalysisManager {
         for (ClassNode cn : newCxt.getApplication().iterate()) {
             for (MethodNode m : cn.getMethods()) {
                 try {
-                    newCxt.getIRCache().getFor(m);
+                    final JSRInlinerAdapter adapter = new JSRInlinerAdapter(m.node, m.node.access, m.node.name, m.node.desc, m.node.signature, m.node.exceptions.toArray(new String[0]));
+                    m.node.accept(adapter);
+                    newCxt.getIRCache().getFor(new org.mapleir.asm.MethodNode(adapter, m.owner));
                 } catch(Exception e) {
                     System.err.println("[MapleIR] Failed to build IR for " + m.getJavaDesc() + ":");
                     e.printStackTrace();
