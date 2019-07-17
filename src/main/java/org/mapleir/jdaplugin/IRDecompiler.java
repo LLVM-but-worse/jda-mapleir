@@ -5,7 +5,6 @@ import org.mapleir.ir.algorithms.BoissinotDestructor;
 import org.mapleir.ir.algorithms.LocalsReallocator;
 import org.mapleir.ir.cfg.ControlFlowGraph;
 import org.mapleir.ir.cfg.builder.ControlFlowGraphBuilder;
-import org.objectweb.asm.commons.JSRInlinerAdapter;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 
@@ -43,9 +42,7 @@ class IRInstructionPrinter extends InstructionPrinter {
 
     @Override
     public ArrayList<String> createPrint() {
-        final JSRInlinerAdapter adapter = new JSRInlinerAdapter(mNode, mNode.access, mNode.name, mNode.desc, mNode.signature, mNode.exceptions.toArray(new String[0]));
-        mNode.accept(adapter);
-        ControlFlowGraph cfg = ControlFlowGraphBuilder.build(new org.mapleir.asm.MethodNode(adapter, new org.mapleir.asm.ClassNode()));
+        ControlFlowGraph cfg = ControlFlowGraphBuilder.build(ASMAdaptor.wrapMethodNode(mNode));
         BoissinotDestructor.leaveSSA(cfg);
         LocalsReallocator.realloc(cfg);
         String result = cfg.toString();

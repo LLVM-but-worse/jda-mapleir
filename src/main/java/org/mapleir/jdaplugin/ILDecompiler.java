@@ -13,7 +13,6 @@ import org.mapleir.ir.printer.MethodNodePrinter;
 import org.mapleir.propertyframework.api.IPropertyDictionary;
 import org.mapleir.propertyframework.util.PropertyHelper;
 import org.mapleir.stdlib.util.TabbedStringWriter;
-import org.objectweb.asm.commons.JSRInlinerAdapter;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 
@@ -27,9 +26,7 @@ public class ILDecompiler extends JDADecompiler implements MapleComponent {
         final MethodNodePrinter methodPrinter = new MethodNodePrinter(sw, settings) {
             @Override
             protected ControlFlowGraph getCfg(MethodNode mn) {
-                final JSRInlinerAdapter adapter = new JSRInlinerAdapter(mn, mn.access, mn.name, mn.desc, mn.signature, mn.exceptions.toArray(new String[0]));
-                mn.accept(adapter);
-                ControlFlowGraph cfg = ControlFlowGraphBuilder.build(new org.mapleir.asm.MethodNode(adapter, new org.mapleir.asm.ClassNode()));
+                ControlFlowGraph cfg = ControlFlowGraphBuilder.build(ASMAdaptor.wrapMethodNode(mn));
                 BoissinotDestructor.leaveSSA(cfg);
                 LocalsReallocator.realloc(cfg);
                 return cfg;

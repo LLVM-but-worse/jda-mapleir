@@ -3,6 +3,7 @@ package org.mapleir.jdaplugin;
 import club.bytecode.the.jda.FileContainer;
 import club.bytecode.the.jda.JDA;
 import club.bytecode.the.jda.gui.fileviewer.ViewerFile;
+import club.bytecode.the.jda.util.BytecodeUtils;
 import org.mapleir.app.client.SimpleApplicationContext;
 import org.mapleir.app.service.ApplicationClassSource;
 import org.mapleir.asm.ClassNode;
@@ -14,7 +15,6 @@ import org.mapleir.deob.dataflow.LiveDataFlowAnalysisImpl;
 import org.mapleir.ir.cfg.builder.ControlFlowGraphBuilder;
 import org.mapleir.stdlib.util.JavaDesc;
 import org.mapleir.stdlib.util.JavaDescSpecifier;
-import org.objectweb.asm.commons.JSRInlinerAdapter;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -80,9 +80,7 @@ public class AnalysisManager {
         for (ClassNode cn : newCxt.getApplication().iterate()) {
             for (MethodNode m : cn.getMethods()) {
                 try {
-                    final JSRInlinerAdapter adapter = new JSRInlinerAdapter(m.node, m.node.access, m.node.name, m.node.desc, m.node.signature, m.node.exceptions.toArray(new String[0]));
-                    m.node.accept(adapter);
-                    newCxt.getIRCache().getFor(new org.mapleir.asm.MethodNode(adapter, m.owner));
+                    newCxt.getIRCache().getFor(new MethodNode(BytecodeUtils.applyJsrInlineAdapter(m.node), m.owner));
                 } catch(Exception e) {
                     System.err.println("[MapleIR] Failed to build IR for " + m.getJavaDesc() + ":");
                     e.printStackTrace();
