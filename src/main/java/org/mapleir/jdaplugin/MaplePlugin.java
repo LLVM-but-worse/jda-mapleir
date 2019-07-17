@@ -6,20 +6,9 @@ import club.bytecode.the.jda.api.JDAPlugin;
 import club.bytecode.the.jda.api.JDAPluginNamespace;
 import club.bytecode.the.jda.decompilers.Decompilers;
 import club.bytecode.the.jda.decompilers.filter.DecompileFilters;
-import org.mapleir.DefaultInvocationResolver;
-import org.mapleir.app.client.SimpleApplicationContext;
-import org.mapleir.app.service.ApplicationClassSource;
-import org.mapleir.context.AnalysisContext;
-import org.mapleir.context.BasicAnalysisContext;
-import org.mapleir.context.IRCache;
-import org.mapleir.ir.cfg.builder.ControlFlowGraphBuilder;
 import org.mapleir.jdaplugin.gui.AboutDialog;
 import org.mapleir.jdaplugin.gui.GuiIntegration;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
-
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
 
 public class MaplePlugin implements JDAPlugin {
     private static MaplePlugin instance;
@@ -55,6 +44,7 @@ public class MaplePlugin implements JDAPlugin {
     @Override
     public void onLoad() {
         Decompilers.registerDecompiler(new IRDecompiler());
+        Decompilers.registerDecompiler(new DebugILDecompiler());
         Decompilers.registerDecompiler(new ILDecompiler());
         DecompileFilters.registerFilter(new DeobfuscateFilter());
         System.out.println("MapleIR decompilers registered");

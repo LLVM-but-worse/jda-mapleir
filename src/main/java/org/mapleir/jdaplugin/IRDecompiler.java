@@ -27,6 +27,7 @@ public class IRDecompiler extends BytecodeDecompiler implements MapleComponent {
 class IRMethodDecompiler extends MethodNodeDecompiler {
     public IRMethodDecompiler(BytecodeDecompiler parent, PrefixedStringBuilder sb, MethodNode mn, ClassNode cn) {
         super(parent, sb, mn, cn);
+        printDetailedMetadata = false;
     }
 
     @Override
@@ -46,6 +47,6 @@ class IRInstructionPrinter extends InstructionPrinter {
         BoissinotDestructor.leaveSSA(cfg);
         LocalsReallocator.realloc(cfg);
         String result = cfg.toString();
-        return new ArrayList<>(Arrays.asList(result.split("\n")));
+        return new ArrayList<>(Arrays.asList(result.split(System.lineSeparator())));
     }
 }
