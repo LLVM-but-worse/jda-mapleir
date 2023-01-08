@@ -6,6 +6,7 @@ import club.bytecode.the.jda.gui.fileviewer.ViewerFile;
 import club.bytecode.the.jda.util.BytecodeUtils;
 import org.mapleir.app.client.SimpleApplicationContext;
 import org.mapleir.app.service.ApplicationClassSource;
+import org.mapleir.asm.ClassHelper;
 import org.mapleir.asm.ClassNode;
 import org.mapleir.asm.MethodNode;
 import org.mapleir.context.AnalysisContext;
@@ -54,7 +55,7 @@ public class AnalysisManager {
             if (!file.endsWith(".class"))
                 continue;
             try {
-                classes.add(new ClassNode(fileContainer.loadClassFile(file)));
+                classes.add(ClassHelper.create(fileContainer.loadClassFile(file)));
             } catch(Exception e) {
                 System.err.println("[MapleIR] Failed to load class " + file + ":");
                 e.printStackTrace();
@@ -128,12 +129,12 @@ public class AnalysisManager {
         return matches;
     }
 
-    public List<ViewerFile> searchMethod(String methodName) { // ugh... we want tokenization from JDA's part
+    public List<ViewerFile> search(String methodName, JavaDesc.DescType descType) { // ugh... we want tokenization from JDA's part
         List<ViewerFile> matches = new ArrayList<>();
         for (FileContainer fc : JDA.getOpenFiles()) {
             AnalysisContext cxt = cxts.get(fc);
             if (cxt == null) continue; // incomplete analysis
-            matches.addAll(cxt.getDataflowAnalysis().findAllRefs(new JavaDescSpecifier(".*", methodName, ".*", JavaDesc.DescType.METHOD))
+            matches.addAll(cxt.getDataflowAnalysis().findAllRefs(new JavaDescSpecifier(".*", methodName, ".*", descType))
                     .map(javaDescUse -> new ViewerFile(fc, javaDescUse.flowElement.getDataUseLocation().owner + ".class"))
                     .collect(Collectors.toList()));
         }

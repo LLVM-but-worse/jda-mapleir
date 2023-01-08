@@ -1,6 +1,7 @@
 package org.mapleir.jdaplugin;
 
 import club.bytecode.the.jda.decompilers.bytecode.*;
+import club.bytecode.the.jda.gui.fileviewer.BytecodeTokenizer;
 import club.bytecode.the.jda.settings.JDADecompilerSettings;
 import com.google.common.collect.Iterators;
 import org.mapleir.flowgraph.ExceptionRange;
@@ -11,10 +12,12 @@ import org.mapleir.ir.cfg.BasicBlock;
 import org.mapleir.ir.cfg.ControlFlowGraph;
 import org.mapleir.ir.cfg.builder.ControlFlowGraphBuilder;
 import org.mapleir.ir.code.Expr;
-import org.mapleir.ir.code.expr.*;
 import org.mapleir.ir.code.Opcode;
 import org.mapleir.ir.code.Stmt;
-import org.mapleir.ir.code.expr.invoke.*;
+import org.mapleir.ir.code.expr.*;
+import org.mapleir.ir.code.expr.invoke.DynamicInvocationExpr;
+import org.mapleir.ir.code.expr.invoke.InitialisedObjectExpr;
+import org.mapleir.ir.code.expr.invoke.InvocationExpr;
 import org.mapleir.ir.code.stmt.*;
 import org.mapleir.ir.code.stmt.copy.AbstractCopyStmt;
 import org.mapleir.stdlib.collections.graph.FastGraphEdge;

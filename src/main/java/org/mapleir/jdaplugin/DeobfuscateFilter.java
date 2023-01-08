@@ -1,6 +1,7 @@
 package org.mapleir.jdaplugin;
 
 import club.bytecode.the.jda.decompilers.filter.DecompileFilter;
+import org.mapleir.asm.ClassHelper;
 import org.mapleir.deob.intraproc.eval.ExpressionEvaluator;
 import org.mapleir.deob.intraproc.eval.impl.ReflectiveFunctorFactory;
 import org.mapleir.deob.passes.DeadCodeEliminationPass;
@@ -24,7 +25,7 @@ public class DeobfuscateFilter implements DecompileFilter, MapleComponent {
     public void process(ClassNode cn) {
         if (cn == null)
             return;
-        org.mapleir.asm.ClassNode wrappedCn = new org.mapleir.asm.ClassNode(cn);
+        org.mapleir.asm.ClassNode wrappedCn = ClassHelper.create(cn);
         for (org.mapleir.asm.MethodNode mn : wrappedCn.getMethods()) {
             ControlFlowGraph cfg = ControlFlowGraphBuilder.build(mn);
             simplifyArithmetic(cfg);
